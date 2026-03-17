@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<title>Registro de NF – Soma Hospitalar RS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;min-height:100vh;padding-bottom:2rem}
+  .topbar{background:#1F4E79;color:#fff;padding:1rem 1.25rem;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+  .topbar-logo{width:36px;height:36px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .topbar-info h1{font-size:16px;font-weight:600}
+  .topbar-info p{font-size:12px;opacity:0.75}
+  .tabs{display:flex;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:60px;z-index:99}
+  .tab{flex:1;padding:12px 4px;font-size:13px;font-weight:500;color:#64748b;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s}
+  .tab.active{color:#1F4E79;border-bottom-color:#1F4E79}
+  .panel{display:none;padding:1rem}
+  .panel.active{display:block}
+  .card{background:#fff;border-radius:12px;padding:1.25rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+  .card-title{font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:1rem;display:flex;align-items:center;gap:6px}
+  .badge{width:20px;height:20px;border-radius:50%;background:#EFF6FF;color:#1F4E79;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+  .qr-btn{width:100%;padding:1.5rem 1rem;background:#EFF6FF;border:2px dashed #93C5FD;border-radius:12px;cursor:pointer;text-align:center;transition:background 0.15s;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .qr-btn:active{background:#DBEAFE}
+  .qr-icon{font-size:40px}
+  .qr-btn p{font-size:15px;font-weight:600;color:#1F4E79}
+  .qr-btn small{font-size:12px;color:#64748b}
+  #video-wrap{display:none;margin-bottom:0.75rem;position:relative;border-radius:12px;overflow:hidden}
+  #video{width:100%;display:block}
+  .scan-frame{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+  .scan-box{width:200px;height:200px;border:3px solid #fff;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.5)}
+  .scan-hint{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#fff;font-size:13px;font-weight:500;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
+  .divider{text-align:center;font-size:12px;color:#94a3b8;margin:0.75rem 0;position:relative}
+  .divider::before,.divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:#e2e8f0}
+  .divider::before{left:0}.divider::after{right:0}
+  .field{margin-bottom:0.75rem}
+  .field label{display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:5px}
+  .field input,.field select{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:#1e293b;transition:border 0.15s;-webkit-appearance:none}
+  .field input:focus,.field select:focus{outline:none;border-color:#1F4E79}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+  .btn-save{width:100%;padding:14px;background:#1F4E79;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity 0.15s;margin-top:0.5rem}
+  .btn-save:active{opacity:0.8}
+  .btn-outline{width:100%;padding:11px;background:#fff;color:#1F4E79;border:1.5px solid #1F4E79;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:0.5rem}
+  .btn-outline:active{background:#EFF6FF}
+  .btn-danger{width:100%;padding:11px;background:#fff;color:#dc2626;border:1.5px solid #fca5a5;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:0.5rem}
+  .toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;padding:10px 20px;border-radius:99px;font-size:14px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.3s;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+  .toast.show{opacity:1}
+  .record{padding:0.9rem 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:flex-start}
+  .record:last-child{border-bottom:none}
+  .record-left p{font-size:14px;font-weight:600;color:#1e293b}
+  .record-left small{font-size:12px;color:#64748b;display:block;margin-top:2px}
+  .record-right{text-align:right}
+  .record-right .val{font-size:15px;font-weight:700;color:#1F4E79}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;margin-top:3px;font-weight:500}
+  .tag-comb{background:#FEF3C7;color:#92400E}
+  .tag-alim{background:#D1FAE5;color:#065F46}
+  .tag-outro{background:#F1F5F9;color:#475569}
+  .empty{text-align:center;padding:2.5rem 1rem;color:#94a3b8;font-size:14px}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:1rem}
+  .stat{background:#EFF6FF;border-radius:10px;padding:0.75rem;text-align:center}
+  .stat-label{font-size:11px;color:#64748b;margin-bottom:2px}
+  .stat-value{font-size:17px;font-weight:700;color:#1F4E79}
+  .instructions li{font-size:13px;color:#475569;line-height:1.8;margin-left:1rem}
+  .instructions b{color:#1F4E79}
+  .nf-filled{background:#F0FDF4;border-color:#86EFAC!important}
+  #stop-cam{display:none;width:100%;padding:10px;background:#fff;color:#64748b;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;margin-bottom:0.75rem}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">🏥</div>
+  <div class="topbar-info">
+    <h1>Registro de NF</h1>
+    <p>Soma Hospitalar RS — Gabriel Santos</p>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('registrar')">📋 Registrar</button>
+  <button class="tab" onclick="switchTab('historico')">📂 Histórico</button>
+  <button class="tab" onclick="switchTab('exportar')">📤 Exportar</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- REGISTRAR -->
+<div id="panel-registrar" class="panel active">
+
+  <div class="card">
+    <div class="card-title"><span class="badge">1</span> Escanear QR Code da NF</div>
+
+    <div id="qr-tap" class="qr-btn" onclick="startScan()">
+      <div class="qr-icon">📷</div>
+      <p>Escanear QR Code</p>
+      <small>Toque para abrir a câmera</small>
+    </div>
+
+    <div id="video-wrap">
+      <video id="video" autoplay playsinline muted></video>
+      <div class="scan-frame">
+        <div class="scan-box"></div>
+      </div>
+      <div class="scan-hint">Aponte para o QR Code da NF</div>
+    </div>
+    <button id="stop-cam" onclick="stopScan()">✕ Parar câmera</button>
+
+    <div class="divider">ou preencha manualmente</div>
+
+    <div class="field">
+      <label>Número / Chave da NF</label>
+      <input id="nf-num" type="text" placeholder="Número ou chave de 44 dígitos"/>
+    </div>
+    <div class="field">
+      <label>Fornecedor / Emitente</label>
+      <input id="nf-fornecedor" type="text" placeholder="Nome do fornecedor"/>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Data da NF</label>
+        <input id="nf-data" type="date"/>
+      </div>
+      <div class="field">
+        <label>Valor total (R$)</label>
+        <input id="nf-valor" type="number" step="0.01" min="0" placeholder="0,00"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="badge">2</span> Classificar despesa</div>
+    <div class="row2">
+      <div class="field">
+        <label>Tipo de despesa</label>
+        <select id="nf-tipo">
+          <option value="">Selecione...</option>
+          <option>Combustível</option>
+          <option>Pedágio</option>
+          <option>Alimentação</option>
+          <option>Diária</option>
+          <option>Outros</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Destino / Rota</label>
+        <input id="nf-destino" type="text" placeholder="Ex: Porto Alegre"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Observação (opcional)</label>
+      <input id="nf-obs" type="text" placeholder="Detalhes adicionais..."/>
+    </div>
+  </div>
+
+  <button class="btn-save" onclick="salvarNF()">✔ Salvar NF</button>
+</div>
+
+<!-- HISTÓRICO -->
+<div id="panel-historico" class="panel">
+  <div class="card">
+    <div class="card-title">NFs registradas</div>
+    <div id="lista-nfs"></div>
+  </div>
+  <button class="btn-danger" onclick="limparTudo()">🗑 Limpar todos os registros</button>
+</div>
+
+<!-- EXPORTAR -->
+<div id="panel-exportar" class="panel">
+  <div class="card">
+    <div class="card-title">Resumo</div>
+    <div id="export-summary"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Como importar no Excel</div>
+    <ol class="instructions">
+      <li>Toque em <b>"Baixar CSV"</b> abaixo</li>
+      <li>Envie o arquivo para seu e-mail ou WhatsApp</li>
+      <li>No PC, abra o Excel → <b>Dados → De texto/CSV</b></li>
+      <li>Selecione o arquivo → clique <b>Carregar</b></li>
+    </ol>
+  </div>
+
+  <button class="btn-save" onclick="exportarCSV()">⬇ Baixar CSV para Excel</button>
+  <button class="btn-outline" onclick="compartilharCSV()">📤 Compartilhar (WhatsApp/E-mail)</button>
+</div>
+
+<script>
+const KEY = 'nf_soma_rs';
+let stream = null, scanInt = null;
+
+function getR(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]') }catch{ return [] } }
+function saveR(r){ localStorage.setItem(KEY, JSON.stringify(r)) }
+
+function toast(msg, cor){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = cor||'#16a34a';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active',['registrar','historico','exportar'][i]===tab);
+  });
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='historico') renderHistorico();
+  if(tab==='exportar') renderExport();
+}
+
+function parseQR(raw){
+  const r={};
+  try{
+    const u=new URL(raw);
+    ['chNFe','chnfe'].forEach(k=>{ if(u.searchParams.get(k)) r.numero=u.searchParams.get(k); });
+    ['nNF','nnf'].forEach(k=>{ if(u.searchParams.get(k)) r.numero=r.numero||u.searchParams.get(k); });
+    ['vNF','vnf'].forEach(k=>{ if(u.searchParams.get(k)) r.valor=parseFloat(u.searchParams.get(k)); });
+    ['xNome','xnome','xEmit','xemit'].forEach(k=>{ if(u.searchParams.get(k)) r.fornecedor=decodeURIComponent(u.searchParams.get(k)); });
+    ['dhEmi','dhemi','dEmi','demi'].forEach(k=>{ if(u.searchParams.get(k)) r.data=u.searchParams.get(k).substring(0,10); });
+  }catch{}
+  if(!r.numero){
+    const digits = raw.replace(/\D/g,'');
+    if(digits.length>=40) r.numero=digits.substring(0,44);
+  }
+  if(!r.numero && raw.length < 60) r.numero = raw;
+  return r;
+}
+
+async function startScan(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    toast('Câmera indisponível. Preencha manualmente.','#dc2626'); return;
+  }
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});
+    const vid = document.getElementById('video');
+    vid.srcObject = stream;
+    document.getElementById('video-wrap').style.display='block';
+    document.getElementById('stop-cam').style.display='block';
+    document.getElementById('qr-tap').style.display='none';
+    const canvas=document.createElement('canvas'), ctx=canvas.getContext('2d');
+    scanInt = setInterval(()=>{
+      if(vid.readyState!==vid.HAVE_ENOUGH_DATA) return;
+      canvas.width=vid.videoWidth; canvas.height=vid.videoHeight;
+      ctx.drawImage(vid,0,0);
+      const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+      if(code){ stopScan(); preencherCampos(parseQR(code.data)); }
+    },300);
+  }catch(e){
+    toast('Permita o acesso à câmera nas configurações do navegador.','#dc2626');
+  }
+}
+
+function stopScan(){
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  if(scanInt){ clearInterval(scanInt); scanInt=null; }
+  document.getElementById('video-wrap').style.display='none';
+  document.getElementById('stop-cam').style.display='none';
+  document.getElementById('qr-tap').style.display='flex';
+}
+
+function preencherCampos(d){
+  if(d.numero){ document.getElementById('nf-num').value=d.numero; }
+  if(d.fornecedor){ document.getElementById('nf-fornecedor').value=d.fornecedor; }
+  if(d.data){ document.getElementById('nf-data').value=d.data; }
+  if(d.valor){ document.getElementById('nf-valor').value=d.valor.toFixed(2); }
+  ['nf-num','nf-fornecedor','nf-data','nf-valor'].forEach(id=>{
+    if(document.getElementById(id).value) document.getElementById(id).classList.add('nf-filled');
+  });
+  toast('QR Code lido! Confira os dados ✓');
+}
+
+function salvarNF(){
+  const num=document.getElementById('nf-num').value.trim();
+  const forn=document.getElementById('nf-fornecedor').value.trim();
+  const data=document.getElementById('nf-data').value;
+  const valor=parseFloat(document.getElementById('nf-valor').value)||0;
+  const tipo=document.getElementById('nf-tipo').value;
+  const dest=document.getElementById('nf-destino').value.trim();
+  const obs=document.getElementById('nf-obs').value.trim();
+  if(!num&&!forn){ toast('Preencha o número da NF ou o fornecedor.','#dc2626'); return; }
+  if(!tipo){ toast('Selecione o tipo de despesa.','#dc2626'); return; }
+  const registros=getR();
+  registros.unshift({id:Date.now(),numero:num||'—',fornecedor:forn||'—',data:data||new Date().toISOString().substring(0,10),valor,tipo,destino:dest,obs,registradoEm:new Date().toISOString()});
+  saveR(registros);
+  toast(`NF salva! R$ ${valor.toFixed(2).replace('.',',')} — ${tipo}`);
+  ['nf-num','nf-fornecedor','nf-valor','nf-destino','nf-obs'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.value='';
+    el.classList.remove('nf-filled');
+  });
+  document.getElementById('nf-data').value=new Date().toISOString().substring(0,10);
+  document.getElementById('nf-tipo').value='';
+}
+
+function tagClass(t){ return ['Combustível','Pedágio'].includes(t)?'tag-comb':['Alimentação','Diária'].includes(t)?'tag-alim':'tag-outro'; }
+
+function renderHistorico(){
+  const el=document.getElementById('lista-nfs');
+  const r=getR();
+  if(!r.length){ el.innerHTML='<div class="empty">Nenhuma NF registrada ainda.</div>'; return; }
+  el.innerHTML=r.map(n=>`
+    <div class="record">
+      <div class="record-left">
+        <p>${n.fornecedor}</p>
+        <small>${n.data} · NF ${n.numero.length>12?n.numero.substring(0,12)+'...':n.numero}</small>
+        <div><span class="tag ${tagClass(n.tipo)}">${n.tipo}</span>${n.destino?` <span class="tag tag-outro">${n.destino}</span>`:''}</div>
+      </div>
+      <div class="record-right">
+        <div class="val">R$ ${n.valor.toFixed(2).replace('.',',')}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderExport(){
+  const el=document.getElementById('export-summary');
+  const r=getR();
+  if(!r.length){ el.innerHTML='<div class="empty">Nenhuma NF para exportar.</div>'; return; }
+  const total=r.reduce((s,x)=>s+x.valor,0);
+  const comb=r.filter(x=>['Combustível','Pedágio'].includes(x.tipo)).reduce((s,x)=>s+x.valor,0);
+  const alim=r.filter(x=>['Alimentação','Diária'].includes(x.tipo)).reduce((s,x)=>s+x.valor,0);
+  el.innerHTML=`
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">NFs</div><div class="stat-value">${r.length}</div></div>
+      <div class="stat"><div class="stat-label">Comb/Pedágio</div><div class="stat-value" style="font-size:14px">R$ ${comb.toFixed(2).replace('.',',')}</div></div>
+      <div class="stat"><div class="stat-label">Alim/Diárias</div><div class="stat-value" style="font-size:14px">R$ ${alim.toFixed(2).replace('.',',')}</div></div>
+    </div>
+    <div style="text-align:right;font-size:13px;color:#64748b">Total geral: <b style="color:#1F4E79;font-size:15px">R$ ${total.toFixed(2).replace('.',',')}</b></div>`;
+}
+
+function gerarCSV(){
+  const r=getR();
+  if(!r.length){ toast('Nenhuma NF registrada.','#dc2626'); return null; }
+  const h=['Data','Numero NF','Fornecedor','Tipo','Destino','Combustivel Pedagio (R$)','Alimentacao Diarias (R$)','Total (R$)','Observacao'];
+  const rows=r.map(n=>{
+    const iC=['Combustível','Pedágio'].includes(n.tipo);
+    const iA=['Alimentação','Diária'].includes(n.tipo);
+    return [n.data,n.numero,n.fornecedor,n.tipo,n.destino,iC?n.valor.toFixed(2):'',iA?n.valor.toFixed(2):'',n.valor.toFixed(2),n.obs]
+      .map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(';');
+  });
+  return '\uFEFF'+[h.join(';'),...rows].join('\n');
+}
+
+function exportarCSV(){
+  const csv=gerarCSV(); if(!csv) return;
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`NFs_SomaRS_${new Date().toISOString().substring(0,10)}.csv`; a.click();
+  toast('CSV baixado com sucesso!');
+}
+
+async function compartilharCSV(){
+  const csv=gerarCSV(); if(!csv) return;
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const file=new File([blob],`NFs_SomaRS_${new Date().toISOString().substring(0,10)}.csv`,{type:'text/csv'});
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file],title:'NFs Soma Hospitalar RS'}); }
+    catch(e){ if(e.name!=='AbortError') exportarCSV(); }
+  } else { exportarCSV(); }
+}
+
+function limparTudo(){
+  if(confirm('Apagar todos os registros?')){ localStorage.removeItem(KEY); renderHistorico(); toast('Registros apagados.','#64748b'); }
+}
+
+document.getElementById('nf-data').value=new Date().toISOString().substring(0,10);
+</script>
+</body>
+</html>
